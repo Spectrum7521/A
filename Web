@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมแก้สมการ - Math Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; }
+        .equation-step {
+            transition: all 0.3s ease;
+        }
+        .correct-answer {
+            animation: bounce 0.5s ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+        .wrong-answer {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">🧮 Math Quest</h1>
+            <p class="text-xl text-purple-100">เกมแก้สมการแบบมีส่วนร่วม</p>
+            <div class="flex justify-center items-center gap-6 mt-4">
+                <div class="bg-white/20 rounded-lg px-4 py-2">
+                    <span class="text-white font-semibold">คะแนน: </span>
+                    <span id="score" class="text-yellow-300 font-bold text-xl">0</span>
+                </div>
+                <div class="bg-white/20 rounded-lg px-4 py-2">
+                    <span class="text-white font-semibold">ระดับ: </span>
+                    <span id="level" class="text-green-300 font-bold text-xl">1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Current Equation -->
+            <div class="bg-white rounded-xl shadow-2xl p-8 mb-6">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">แก้สมการนี้:</h2>
+                    <div id="currentEquation" class="text-4xl font-bold text-indigo-600 mb-4">
+                        2x + 5 = 13
+                    </div>
+                    <p class="text-gray-600">หา x = ?</p>
+                </div>
+
+                <!-- Step-by-step solution area -->
+                <div id="solutionSteps" class="bg-gray-50 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">ขั้นตอนการแก้:</h3>
+                    <div id="stepsList" class="space-y-3">
+                        <!-- Steps will be added here -->
+                    </div>
+                </div>
+
+                <!-- Interactive buttons for next step -->
+                <div id="actionButtons" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Buttons will be generated here -->
+                </div>
+
+                <!-- Answer input -->
+                <div id="answerSection" class="text-center" style="display: none;">
+                    <p class="text-lg font-semibold text-gray-800 mb-4">ตอนนี้ x = ?</p>
+                    <div class="flex justify-center items-center gap-4">
+                        <input type="number" id="finalAnswer" class="w-24 px-4 py-2 text-xl font-bold text-center border-2 border-indigo-300 rounded-lg focus:border-indigo-500 focus:outline-none">
+                        <button onclick="checkFinalAnswer()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            ตรวจคำตอบ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback area -->
+            <div id="feedback" class="text-center mb-6" style="display: none;">
+                <!-- Feedback messages will appear here -->
+            </div>
+
+            <!-- Next equation button -->
+            <div class="text-center">
+                <button id="nextEquationBtn" onclick="generateNewEquation()" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-lg transition-colors" style="display: none;">
+                    โจทย์ถัดไป 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGame = {
+            equation: { a: 2, b: 5, result: 13 }, // ax + b = result
+            steps: [],
+            currentStep: 0,
+            answer: 4,
+            score: 0,
+            level: 1
+        };
+
+        function generateEquation(level) {
+            let a, b, x, result;
+            
+            if (level <= 2) {
+                // Easy: 2x + 3 = 11
+                a = Math.floor(Math.random() * 5) + 1;
+                x = Math.floor(Math.random() * 10) + 1;
+                b = Math.floor(Math.random() * 10) + 1;
+                result = a * x + b;
+            } else if (level <= 4) {
+                // Medium: 3x - 7 = 14
+                a = Math.floor(Math.random() * 7) + 1;
+                x = Math.floor(Math.random() * 15) + 1;
+                b = Math.floor(Math.random() * 20) - 10; // Can be negative
+                result = a * x + b;
+            } else {
+                // Hard: 5x - 12 = 23
+                a = Math.floor(Math.random() * 10) + 1;
+                x = Math.floor(Math.random() * 20) + 1;
+                b = Math.floor(Math.random() * 30) - 15; // Can be negative
+                result = a * x + b;
+            }
+
+            return { a, b, result, answer: x };
+        }
+
+        function displayEquation() {
+            const eq = currentGame.equation;
+            const sign = eq.b >= 0 ? '+' : '';
+            document.getElementById('currentEquation').textContent = 
+                `${eq.a}x ${sign} ${eq.b} = ${eq.result}`;
+        }
+
+        function generateActionButtons() {
+            const eq = currentGame.equation;
+            const buttonsDiv = document.getElementById('actionButtons');
+            
+            if (currentGame.currentStep === 0) {
+                // First step: subtract or add to isolate ax
+                const correctAction = eq.b >= 0 ? `ลบ ${eq.b} ทั้งสองข้าง` : `บวก ${Math.abs(eq.b)} ทั้งสองข้าง`;
+                const wrongAction1 = eq.b >= 0 ? `บวก ${eq.b} ทั้งสองข้าง` : `ลบ ${Math.abs(eq.b)} ทั้งสองข้าง`;
+                const wrongAction2 = `หาร ${eq.a} ทั้งสองข้าง`;
+                
+                buttonsDiv.innerHTML = `
+                    <button onclick="performStep('${correctAction}', true)" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        ${correctAction}
+                    </button>
+                    <button onclick="performStep('${wrongAction1}', false)" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        ${wrongAction1}
+                    </button>
+                    <button onclick="performStep('${wrongAction2}', false)" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        ${wrongAction2}
+                    </button>
+                `;
+            } else if (currentGame.currentStep === 1) {
+                // Second step: divide by coefficient
+                const correctAction = `หาร ${eq.a} ทั้งสองข้าง`;
+                const wrongAction1 = `คูณ ${eq.a} ทั้งสองข้าง`;
+                const wrongAction2 = eq.b >= 0 ? `ลบ ${eq.a} ทั้งสองข้าง` : `บวก ${eq.a} ทั้งสองข้าง`;
+                
+                buttonsDiv.innerHTML = `
+                    <button onclick="performStep('${correctAction}', true)" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        ${correctAction}
+                    </button>
+                    <button onclick="performStep('${wrongAction1}', false)" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        ${wrongAction1}
+                    </button>
+                    <button onclick="performStep('${wrongAction2}', false)" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                        ${wrongAction2}
+                    </button>
+                `;
+            }
+        }
+
+        function performStep(action, isCorrect) {
+            const eq = currentGame.equation;
+            const stepsList = document.getElementById('stepsList');
+            
+            if (isCorrect) {
+                currentGame.currentStep++;
+                
+                if (currentGame.currentStep === 1) {
+                    // After first step
+                    const newResult = eq.result - eq.b;
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'equation-step correct-answer bg-green-100 border-l-4 border-green-500 p-3 rounded';
+                    stepDiv.innerHTML = `
+                        <div class="font-semibold text-green-800">${action}</div>
+                        <div class="text-lg mt-2">${eq.a}x = ${newResult}</div>
+                    `;
+                    stepsList.appendChild(stepDiv);
+                    
+                    setTimeout(() => {
+                        generateActionButtons();
+                    }, 1000);
+                    
+                } else if (currentGame.currentStep === 2) {
+                    // After second step - show final answer
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'equation-step correct-answer bg-green-100 border-l-4 border-green-500 p-3 rounded';
+                    stepDiv.innerHTML = `
+                        <div class="font-semibold text-green-800">${action}</div>
+                        <div class="text-lg mt-2">x = ${currentGame.equation.answer}</div>
+                    `;
+                    stepsList.appendChild(stepDiv);
+                    
+                    document.getElementById('actionButtons').style.display = 'none';
+                    document.getElementById('answerSection').style.display = 'block';
+                }
+                
+            } else {
+                // Wrong answer - deduct points
+                currentGame.score = Math.max(0, currentGame.score - 5);
+                document.getElementById('score').textContent = currentGame.score;
+                
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'equation-step wrong-answer bg-red-100 border-l-4 border-red-500 p-3 rounded';
+                stepDiv.innerHTML = `
+                    <div class="font-semibold text-red-800">❌ ${action}</div>
+                    <div class="text-red-600">ไม่ถูกต้อง! ลองใหม่อีกครั้ง (-5 คะแนน)</div>
+                `;
+                stepsList.appendChild(stepDiv);
+                
+                setTimeout(() => {
+                    stepsList.removeChild(stepDiv);
+                }, 2000);
+            }
+        }
+
+        function checkFinalAnswer() {
+            const userAnswer = parseInt(document.getElementById('finalAnswer').value);
+            const feedback = document.getElementById('feedback');
+            
+            if (userAnswer === currentGame.equation.answer) {
+                currentGame.score += currentGame.level * 10;
+                document.getElementById('score').textContent = currentGame.score;
+                
+                feedback.innerHTML = `
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-lg">
+                        <div class="text-2xl font-bold">🎉 ถูกต้อง!</div>
+                        <div class="text-lg">x = ${currentGame.equation.answer}</div>
+                        <div class="text-sm mt-2">ได้รับ ${currentGame.level * 10} คะแนน!</div>
+                    </div>
+                `;
+                feedback.style.display = 'block';
+                
+                document.getElementById('nextEquationBtn').style.display = 'inline-block';
+                document.getElementById('answerSection').style.display = 'none';
+                
+                // Level up every 3 correct answers
+                if (currentGame.score % 30 === 0) {
+                    currentGame.level++;
+                    document.getElementById('level').textContent = currentGame.level;
+                }
+                
+            } else {
+                // Wrong final answer - deduct points
+                currentGame.score = Math.max(0, currentGame.score - 10);
+                document.getElementById('score').textContent = currentGame.score;
+                
+                feedback.innerHTML = `
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg">
+                        <div class="text-xl font-bold">❌ ไม่ถูกต้อง</div>
+                        <div>ลองคิดดูใหม่อีกครั้ง (-10 คะแนน)</div>
+                    </div>
+                `;
+                feedback.style.display = 'block';
+                
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                    document.getElementById('finalAnswer').value = '';
+                }, 2000);
+            }
+        }
+
+        function generateNewEquation() {
+            const newEq = generateEquation(currentGame.level);
+            currentGame.equation = newEq;
+            currentGame.currentStep = 0;
+            
+            // Reset UI
+            document.getElementById('stepsList').innerHTML = '';
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('nextEquationBtn').style.display = 'none';
+            document.getElementById('answerSection').style.display = 'none';
+            document.getElementById('actionButtons').style.display = 'grid';
+            document.getElementById('finalAnswer').value = '';
+            
+            displayEquation();
+            generateActionButtons();
+        }
+
+        // Initialize game
+        function initGame() {
+            const eq = generateEquation(1);
+            currentGame.equation = eq;
+            displayEquation();
+            generateActionButtons();
+        }
+
+        // Start the game
+        initGame();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972288e6e2034b64',t:'MTc1NTY5OTY2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
